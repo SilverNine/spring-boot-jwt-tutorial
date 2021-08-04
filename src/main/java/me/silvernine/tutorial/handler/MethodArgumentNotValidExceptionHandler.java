@@ -29,7 +29,7 @@ public class MethodArgumentNotValidExceptionHandler {
     }
 
     private Error processFieldErrors(List<org.springframework.validation.FieldError> fieldErrors) {
-        Error error = new Error(BAD_REQUEST.value(), "validation error");
+        Error error = new Error(BAD_REQUEST.value(), "@Valid Error");
         for (org.springframework.validation.FieldError fieldError: fieldErrors) {
             error.addFieldError(fieldError.getObjectName(), fieldError.getField(), fieldError.getDefaultMessage());
         }
