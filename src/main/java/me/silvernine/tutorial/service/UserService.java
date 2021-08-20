@@ -1,16 +1,16 @@
 package me.silvernine.tutorial.service;
 
+import java.util.Collections;
+import java.util.Optional;
 import me.silvernine.tutorial.dto.UserDto;
 import me.silvernine.tutorial.entity.Authority;
 import me.silvernine.tutorial.entity.User;
+import me.silvernine.tutorial.exception.DuplicateMemberException;
 import me.silvernine.tutorial.repository.UserRepository;
 import me.silvernine.tutorial.util.SecurityUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Collections;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -25,7 +25,7 @@ public class UserService {
     @Transactional
     public User signup(UserDto userDto) {
         if (userRepository.findOneWithAuthoritiesByUsername(userDto.getUsername()).orElse(null) != null) {
-            throw new RuntimeException("이미 가입되어 있는 유저입니다.");
+            throw new DuplicateMemberException("이미 가입되어 있는 유저입니다.");
         }
 
         //빌더 패턴의 장점
