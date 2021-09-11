@@ -41,7 +41,6 @@ public class UserController {
     @GetMapping("/user")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<User> getMyUserInfo(HttpServletRequest request) {
-        System.out.println(request.getHeader("Authorization"));
         return ResponseEntity.ok(userService.getMyUserWithAuthorities().get());
     }
 
