@@ -23,12 +23,11 @@ public class UserService {
     }
 
     @Transactional
-    public User signup(UserDto userDto) {
+    public UserDto signup(UserDto userDto) {
         if (userRepository.findOneWithAuthoritiesByUsername(userDto.getUsername()).orElse(null) != null) {
             throw new DuplicateMemberException("이미 가입되어 있는 유저입니다.");
         }
 
-        //빌더 패턴의 장점
         Authority authority = Authority.builder()
                 .authorityName("ROLE_USER")
                 .build();
@@ -41,16 +40,16 @@ public class UserService {
                 .activated(true)
                 .build();
 
-        return userRepository.save(user);
+        return UserDto.from(userRepository.save(user));
     }
 
     @Transactional(readOnly = true)
-    public Optional<User> getUserWithAuthorities(String username) {
-        return userRepository.findOneWithAuthoritiesByUsername(username);
+    public UserDto getUserWithAuthorities(String username) {
+        return UserDto.from(userRepository.findOneWithAuthoritiesByUsername(username).orElse(null));
     }
 
     @Transactional(readOnly = true)
-    public Optional<User> getMyUserWithAuthorities() {
-        return SecurityUtil.getCurrentUsername().flatMap(userRepository::findOneWithAuthoritiesByUsername);
+    public UserDto getMyUserWithAuthorities() {
+        return UserDto.from(SecurityUtil.getCurrentUsername().flatMap(userRepository::findOneWithAuthoritiesByUsername).orElse(null));
     }
 }
