@@ -3,7 +3,7 @@ package me.silvernine.tutorial.handler;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 import java.util.List;
-import me.silvernine.tutorial.dto.ErrorDTO;
+import me.silvernine.tutorial.dto.ErrorDto;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.validation.BindingResult;
@@ -20,14 +20,14 @@ public class MethodArgumentNotValidExceptionHandler {
     @ResponseStatus(BAD_REQUEST)
     @ResponseBody
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ErrorDTO methodArgumentNotValidException(MethodArgumentNotValidException ex) {
+    public ErrorDto methodArgumentNotValidException(MethodArgumentNotValidException ex) {
         BindingResult result = ex.getBindingResult();
         List<org.springframework.validation.FieldError> fieldErrors = result.getFieldErrors();
         return processFieldErrors(fieldErrors);
     }
 
-    private ErrorDTO processFieldErrors(List<org.springframework.validation.FieldError> fieldErrors) {
-        ErrorDTO errorDTO = new ErrorDTO(BAD_REQUEST.value(), "@Valid Error");
+    private ErrorDto processFieldErrors(List<org.springframework.validation.FieldError> fieldErrors) {
+        ErrorDto errorDTO = new ErrorDto(BAD_REQUEST.value(), "@Valid Error");
         for (org.springframework.validation.FieldError fieldError: fieldErrors) {
             errorDTO.addFieldError(fieldError.getObjectName(), fieldError.getField(), fieldError.getDefaultMessage());
         }

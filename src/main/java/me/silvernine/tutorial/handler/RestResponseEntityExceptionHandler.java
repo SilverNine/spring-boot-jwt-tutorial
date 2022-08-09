@@ -2,7 +2,7 @@ package me.silvernine.tutorial.handler;
 
 import static org.springframework.http.HttpStatus.CONFLICT;
 
-import me.silvernine.tutorial.dto.ErrorDTO;
+import me.silvernine.tutorial.dto.ErrorDto;
 import me.silvernine.tutorial.exception.DuplicateMemberException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -17,7 +17,7 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
     @ResponseStatus(CONFLICT)
     @ExceptionHandler(value = { DuplicateMemberException.class })
     @ResponseBody
-    protected ErrorDTO badRequest(RuntimeException ex, WebRequest request) {
-        return new ErrorDTO(CONFLICT.value(), ex.getMessage());
+    protected ErrorDto badRequest(RuntimeException ex, WebRequest request) {
+        return new ErrorDto(CONFLICT.value(), ex.getMessage());
     }
 }
