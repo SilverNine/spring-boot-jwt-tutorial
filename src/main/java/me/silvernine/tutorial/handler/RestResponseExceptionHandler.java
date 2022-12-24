@@ -20,7 +20,7 @@ public class RestResponseExceptionHandler extends ResponseEntityExceptionHandler
     @ResponseStatus(CONFLICT)
     @ExceptionHandler(value = { DuplicateMemberException.class })
     @ResponseBody
-    protected ErrorDto badRequest(RuntimeException ex, WebRequest request) {
+    protected ErrorDto conflict(RuntimeException ex, WebRequest request) {
         return new ErrorDto(CONFLICT.value(), ex.getMessage());
     }
 
