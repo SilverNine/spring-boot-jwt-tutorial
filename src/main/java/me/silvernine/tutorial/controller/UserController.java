@@ -1,7 +1,6 @@
 package me.silvernine.tutorial.controller;
 
 import me.silvernine.tutorial.dto.UserDto;
-import me.silvernine.tutorial.entity.User;
 import me.silvernine.tutorial.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
