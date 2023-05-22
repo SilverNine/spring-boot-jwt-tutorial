@@ -28,10 +28,10 @@ public class SecurityConfig {
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
     public SecurityConfig(
-            TokenProvider tokenProvider,
-            CorsFilter corsFilter,
-            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
-            JwtAccessDeniedHandler jwtAccessDeniedHandler
+        TokenProvider tokenProvider,
+        CorsFilter corsFilter,
+        JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+        JwtAccessDeniedHandler jwtAccessDeniedHandler
     ) {
         this.tokenProvider = tokenProvider;
         this.corsFilter = corsFilter;
@@ -45,37 +45,36 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                // token을 사용하는 방식이기 때문에 csrf를 disable합니다.
-                .csrf().disable()
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            // token을 사용하는 방식이기 때문에 csrf를 disable합니다.
+            .csrf(csrf -> csrf.disable())
 
-                .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class)
-
-                .exceptionHandling()
-                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+            .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(exceptionHandling -> exceptionHandling
                 .accessDeniedHandler(jwtAccessDeniedHandler)
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+            )
 
-                // enable h2-console
-                .and()
-                .headers()
-                .frameOptions()
-                .sameOrigin()
-
-                // 세션을 사용하지 않기 때문에 STATELESS로 설정
-                .and()
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-
-                .and()
-                .authorizeHttpRequests()
+            .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
                 .requestMatchers("/api/hello", "/api/authenticate", "/api/signup").permitAll()
                 .requestMatchers(PathRequest.toH2Console()).permitAll()
                 .anyRequest().authenticated()
+            )
 
-                .and()
-                .apply(new JwtSecurityConfig(tokenProvider));
+            // 세션을 사용하지 않기 때문에 STATELESS로 설정
+            .sessionManagement(sessionManagement ->
+                sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
 
-        return httpSecurity.build();
+            // enable h2-console
+            .headers(headers ->
+                headers.frameOptions(options ->
+                    options.sameOrigin()
+                )
+            )
+
+            .apply(new JwtSecurityConfig(tokenProvider));
+        return http.build();
     }
 }
