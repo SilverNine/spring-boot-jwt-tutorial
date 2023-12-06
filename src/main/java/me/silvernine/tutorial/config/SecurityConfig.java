@@ -11,6 +11,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -48,7 +50,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             // token을 사용하는 방식이기 때문에 csrf를 disable합니다.
-            .csrf(csrf -> csrf.disable())
+            .csrf(AbstractHttpConfigurer::disable)
 
             .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(exceptionHandling -> exceptionHandling
@@ -69,12 +71,10 @@ public class SecurityConfig {
 
             // enable h2-console
             .headers(headers ->
-                headers.frameOptions(options ->
-                    options.sameOrigin()
-                )
+                headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
             )
 
-            .apply(new JwtSecurityConfig(tokenProvider));
+            .with(new JwtSecurityConfig(tokenProvider), customizer -> {});
         return http.build();
     }
 }
