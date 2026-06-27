@@ -25,7 +25,7 @@ public class UserService {
 
     @Transactional
     public UserDto signup(UserDto userDto) {
-        if (userRepository.findOneWithAuthoritiesByUsername(userDto.getUsername()).orElse(null) != null) {
+        if (userRepository.findOneWithAuthoritiesByUsername(userDto.username()).orElse(null) != null) {
             throw new DuplicateMemberException("이미 가입되어 있는 유저입니다.");
         }
 
@@ -34,9 +34,9 @@ public class UserService {
                 .build();
 
         User user = User.builder()
-                .username(userDto.getUsername())
-                .password(passwordEncoder.encode(userDto.getPassword()))
-                .nickname(userDto.getNickname())
+                .username(userDto.username())
+                .password(passwordEncoder.encode(userDto.password()))
+                .nickname(userDto.nickname())
                 .authorities(Collections.singleton(authority))
                 .activated(true)
                 .build();
@@ -46,7 +46,10 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserDto getUserWithAuthorities(String username) {
-        return UserDto.from(userRepository.findOneWithAuthoritiesByUsername(username).orElse(null));
+        return UserDto.from(
+                userRepository.findOneWithAuthoritiesByUsername(username)
+                        .orElseThrow(() -> new NotFoundMemberException(username + " -> 데이터베이스에서 찾을 수 없습니다."))
+        );
     }
 
     @Transactional(readOnly = true)

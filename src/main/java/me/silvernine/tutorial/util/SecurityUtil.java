@@ -23,11 +23,10 @@ public class SecurityUtil {
       }
 
       String username = null;
-      if (authentication.getPrincipal() instanceof UserDetails) {
-         UserDetails springSecurityUser = (UserDetails) authentication.getPrincipal();
+      if (authentication.getPrincipal() instanceof UserDetails springSecurityUser) {
          username = springSecurityUser.getUsername();
-      } else if (authentication.getPrincipal() instanceof String) {
-         username = (String) authentication.getPrincipal();
+      } else if (authentication.getPrincipal() instanceof String principal) {
+         username = principal;
       }
 
       return Optional.ofNullable(username);
