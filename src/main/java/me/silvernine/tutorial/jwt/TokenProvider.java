@@ -1,12 +1,11 @@
 package me.silvernine.tutorial.jwt;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Value;
+import me.silvernine.tutorial.config.JwtProperties;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,81 +14,76 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.util.Arrays;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
-import java.util.stream.Collectors;
+import java.util.List;
 
+/**
+ * Access Token(JWT)을 만들고 검증합니다.
+ * <p>
+ * 강의 영상과 달라진 점
+ * <ul>
+ *   <li>키는 생성자에서 바로 만듭니다. InitializingBean 이 필요 없습니다.</li>
+ *   <li>권한은 쉼표로 이은 문자열 대신 JSON 배열로 넣습니다.</li>
+ *   <li>발급 시각(iat)을 넣습니다.</li>
+ *   <li>검증과 파싱을 한 번에 합니다. 잘못된 토큰이면 {@link JwtException} 이 납니다.</li>
+ * </ul>
+ */
 @Component
-public class TokenProvider implements InitializingBean {
+public class TokenProvider {
 
-   private final Logger logger = LoggerFactory.getLogger(TokenProvider.class);
-   private static final String AUTHORITIES_KEY = "auth";
-   private final String secret;
-   private final long tokenValidityInMilliseconds;
-   private SecretKey key;
+    private static final String AUTHORITIES_KEY = "auth";
 
-   public TokenProvider(
-      @Value("${jwt.secret}") String secret,
-      @Value("${jwt.token-validity-in-seconds}") long tokenValidityInSeconds) {
-      this.secret = secret;
-      this.tokenValidityInMilliseconds = tokenValidityInSeconds * 1000;
-   }
+    private final SecretKey key;
+    private final Duration accessTokenValidity;
 
-   @Override
-   public void afterPropertiesSet() {
-      byte[] keyBytes = Decoders.BASE64.decode(secret);
-      this.key = Keys.hmacShaKeyFor(keyBytes);
-   }
+    public TokenProvider(JwtProperties properties) {
+        this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(properties.secret()));
+        this.accessTokenValidity = properties.accessTokenValidity();
+    }
 
-   public String createToken(Authentication authentication) {
-      String authorities = authentication.getAuthorities().stream()
-         .map(GrantedAuthority::getAuthority)
-         .collect(Collectors.joining(","));
+    public String createAccessToken(String username, Collection<? extends GrantedAuthority> authorities) {
+        Instant now = Instant.now();
+        List<String> roles = authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
 
-      long now = (new Date()).getTime();
-      Date validity = new Date(now + this.tokenValidityInMilliseconds);
+        return Jwts.builder()
+                .subject(username)
+                .claim(AUTHORITIES_KEY, roles)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plus(accessTokenValidity)))
+                .signWith(key, Jwts.SIG.HS512)
+                .compact();
+    }
 
-      return Jwts.builder()
-         .subject(authentication.getName())
-         .claim(AUTHORITIES_KEY, authorities)
-         .signWith(key, Jwts.SIG.HS512)
-         .expiration(validity)
-         .compact();
-   }
+    /**
+     * 토큰을 검증하고 인증 정보를 만듭니다.
+     *
+     * @throws io.jsonwebtoken.ExpiredJwtException 만료된 토큰
+     * @throws JwtException                        서명이 틀리거나 형식이 잘못된 토큰
+     * @throws IllegalArgumentException            빈 토큰
+     */
+    public Authentication getAuthentication(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
 
-   public Authentication getAuthentication(String token) {
-      Claims claims = Jwts
-              .parser()
-              .verifyWith(key)
-              .build()
-              .parseSignedClaims(token)
-              .getPayload();
+        List<?> roles = claims.get(AUTHORITIES_KEY, List.class);
+        List<SimpleGrantedAuthority> authorities = roles == null ? List.of() : roles.stream()
+                .map(Object::toString)
+                .map(SimpleGrantedAuthority::new)
+                .toList();
 
-      Collection<? extends GrantedAuthority> authorities =
-         Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
-            .filter(auth -> !auth.isEmpty())
-            .map(SimpleGrantedAuthority::new)
-            .toList();
+        User principal = new User(claims.getSubject(), "", authorities);
+        return UsernamePasswordAuthenticationToken.authenticated(principal, token, authorities);
+    }
 
-      User principal = new User(claims.getSubject(), "", authorities);
-
-      return new UsernamePasswordAuthenticationToken(principal, token, authorities);
-   }
-
-   public boolean validateToken(String token) {
-      try {
-         Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
-         return true;
-      } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
-         logger.info("잘못된 JWT 서명입니다.");
-      } catch (ExpiredJwtException e) {
-         logger.info("만료된 JWT 토큰입니다.");
-      } catch (UnsupportedJwtException e) {
-         logger.info("지원되지 않는 JWT 토큰입니다.");
-      } catch (IllegalArgumentException e) {
-         logger.info("JWT 토큰이 잘못되었습니다.");
-      }
-      return false;
-   }
+    public Duration accessTokenValidity() {
+        return accessTokenValidity;
+    }
 }

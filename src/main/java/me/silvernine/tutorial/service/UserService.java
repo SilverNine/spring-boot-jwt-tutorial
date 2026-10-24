@@ -57,7 +57,7 @@ public class UserService {
         return UserDto.from(
                 SecurityUtil.getCurrentUsername()
                         .flatMap(userRepository::findOneWithAuthoritiesByUsername)
-                        .orElseThrow(() -> new NotFoundMemberException("Member not found"))
+                        .orElseThrow(() -> new NotFoundMemberException("로그인한 사용자를 찾을 수 없습니다."))
         );
     }
 }

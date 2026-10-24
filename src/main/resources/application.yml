@@ -21,12 +21,13 @@ spring:
     defer-datasource-initialization: true
 
 jwt:
-  header: Authorization
-  #HS512 알고리즘을 사용할 것이기 때문에 512bit, 즉 64byte 이상의 secret key를 사용해야 한다.
-  #운영 환경에서는 반드시 JWT_SECRET 환경변수로 주입할 것. 아래 값은 로컬/튜토리얼용 기본값이다.
-  #echo -n 'silvernine-tech-spring-boot-jwt-tutorial-secret-silvernine-tech-spring-boot-jwt-tutorial-secret'|base64
+  # HS512 서명이라 64바이트(512비트) 이상의 키가 필요합니다. 값은 Base64로 인코딩한 문자열입니다.
+  # 아래 기본값은 로컬 실습용입니다. 운영에서는 반드시 JWT_SECRET 환경변수로 주입하세요.
+  # 만드는 법: openssl rand -base64 64
   secret: ${JWT_SECRET:c2lsdmVybmluZS10ZWNoLXNwcmluZy1ib290LWp3dC10dXRvcmlhbC1zZWNyZXQtc2lsdmVybmluZS10ZWNoLXNwcmluZy1ib290LWp3dC10dXRvcmlhbC1zZWNyZXQ=}
-  token-validity-in-seconds: ${JWT_TOKEN_VALIDITY_IN_SECONDS:86400}
+  # Access Token은 짧게, Refresh Token은 길게 둡니다. 30m, 1h, 14d 같은 형식을 씁니다.
+  access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:30m}
+  refresh-token-validity: ${JWT_REFRESH_TOKEN_VALIDITY:14d}
 
 logging:
   level:
